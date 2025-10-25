@@ -37,10 +37,13 @@ func viewSnippet(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	// interpolate response string
-	msg := fmt.Sprintf("Display the snippet with ID: %d", id)
-	log.Println("Snippet ID: ", snippetId)
-	w.Write([]byte(msg))
+	// Write a message to the response body using fmt.Fprintf().
+	// fmt.Fprintf() returns the number of bytes written to the response body and any error that occurred. if no error occurs, err will be nil.
+	noOfBytes, err := fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	log.Println("No of bytes written: ", noOfBytes)
+	if err != nil {
+		log.Println("Error: ", err)
+	}
 }
 
 // handler to create snippet
@@ -51,8 +54,19 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 
 func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	log.Println("Create Snippet handler called")
-	w.Write([]byte("Save a new snippet..."))
 
+	// header config should be done before WriteHeader()
+	// add a custom header
+	w.Header().Add("Server", "Snippetbox")
+
+	// update header
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	// WriteHeader not specified, defaults to 200 OK
+	w.WriteHeader(http.StatusCreated)
+
+	// write response
+	w.Write([]byte("Save a new snippet..."))
 }
 
 func main() {
