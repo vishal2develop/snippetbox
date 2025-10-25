@@ -49,13 +49,24 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display a form for creating a new snippet..."))
 }
 
+func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+	log.Println("Create Snippet handler called")
+	w.Write([]byte("Save a new snippet..."))
+
+}
+
 func main() {
 	//Componenet 2 (Router/Servermux): Use the http.NewServeMux() function to initialize a new servemux (router), then
 	// register the home function as the handler for the "/" URL pattern.
 	mux := http.NewServeMux()
-	mux.HandleFunc("/{$}", home) // {$} = Restrict this route to exact matches on / only.
-	mux.HandleFunc("/snippet/view/{id}", viewSnippet)
-	mux.HandleFunc("/snippet/create", createSnippet)
+
+	// GET Routes
+	mux.HandleFunc("GET /{$}", home) // {$} = Restrict this route to exact matches on / only.
+	mux.HandleFunc("GET /snippet/view/{id}", viewSnippet)
+	mux.HandleFunc("GET /snippet/create", createSnippet)
+
+	// POST Routes
+	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
 
 	// Not Recommended
 	// Register routes without explicitly declaring a servemux (http.handle/ http.handleFunc)
