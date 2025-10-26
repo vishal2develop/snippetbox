@@ -1,0 +1,25 @@
+{{define "base"}}
+<!doctype html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        {{/* Invoke named template - title */}}
+        {{/* Dot - To pass any dynamic data to the template */}}
+        <title>{{template "title" .}} - Snippetbox</title>
+    </head>
+    <body>
+        <header>
+            <h1><a href='/'>Snippetbox</a></h1>
+        </header>
+
+        <!-- Invoke the navigation template -->
+        {{template "nav" .}}
+
+        <main>
+        {{/* Invoke named template - main */}}
+            {{template "main" .}}
+        </main>
+        <footer>Powered by <a href='https://golang.org/'>Go</a></footer>
+    </body>
+</html>
+{{end}}
