@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 // home handles requests to the root URL ("/").
-func home(w http.ResponseWriter, r *http.Request) {
+// Change the signature of the home handler so it is defined as a method against
+// *application.
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Add a custom response header for demonstration.
 	w.Header().Add("Server", "Go")
 
@@ -34,7 +35,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// ⚠️ Always check the error immediately after parsing.
 	// If there’s a syntax or path error, return a 500 response and stop further execution.
 	if err != nil {
-		log.Print(err.Error())
+		// log at Error level containing the error message,
+		//also including the request method and URI as attributes to assist with debugging.
+		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -46,14 +49,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// why pass "base": Render and execute the template named base, and write the final HTML to w (the HTTP response).
 	err = templateSet.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
+		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
 	}
 }
 
 // snippetView handles requests for viewing a specific snippet.
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// ✅ Extract the "id" parameter from the URL and convert it to an integer.
 	// 💡 PathValue() gets the dynamic value from the route pattern, e.g. /snippet/view/{id}
 	id, err := strconv.Atoi(r.PathValue("id"))
@@ -69,12 +71,12 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 // snippetCreate displays a form for creating a new snippet.
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display a form for creating a new snippet..."))
 }
 
 // snippetCreatePost handles form submissions and saves a new snippet.
-func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// ✅ Respond with a 201 Created status to indicate successful creation.
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Save a new snippet..."))
