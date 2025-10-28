@@ -35,11 +35,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// ⚠️ Always check the error immediately after parsing.
 	// If there’s a syntax or path error, return a 500 response and stop further execution.
 	if err != nil {
-		// log at Error level containing the error message,
-		//also including the request method and URI as attributes to assist with debugging.
-		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		// Use the serverError() helper to log the error and send a 500 response.
+		app.serverError(w, r, err)
 	}
 
 	// ✅ Execute the base template and write the output to the ResponseWriter.
@@ -49,8 +46,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// why pass "base": Render and execute the template named base, and write the final HTML to w (the HTTP response).
 	err = templateSet.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		// Use the serverError() helper to log the error and send a 500 response.
+		app.serverError(w, r, err)
 	}
 }
 
