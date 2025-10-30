@@ -3,13 +3,10 @@ package main
 import (
 	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	"net/http"
 	"os"
-
-	// import models package
-	""
-	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.vishalborana2407.net/internal/models"
 )
 
@@ -60,7 +57,7 @@ func main() {
 	app := &application{
 		logger:   logger,
 		snippets: &models.SnippetModel{DB: db}, // contains the connection pool
-		
+
 	}
 
 	// Value returned by flag.String() is a pointer to the flag's value and not the value itself.
