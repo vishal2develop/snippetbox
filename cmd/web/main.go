@@ -7,13 +7,15 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"snippetbox.vishalborana2407.net/internal/models"
 )
 
 // _ = Import this package only for its side effects, not because I’m directly using its functions or types.
 
 // Define an application struct to hold the application-wide dependencies
 type application struct {
-	logger *slog.Logger
+	logger   *slog.Logger
+	snippets *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
 }
 
 func main() {
@@ -51,9 +53,11 @@ func main() {
 	defer db.Close()
 
 	// Initialize a new instance of our application struct, containing the
-	// dependencies (for now, just the structured logger).
+	// dependencies
 	app := &application{
-		logger: logger,
+		logger:   logger,
+		snippets: &models.SnippetModel{DB: db}, // contains the connection pool
+
 	}
 
 	// Value returned by flag.String() is a pointer to the flag's value and not the value itself.
