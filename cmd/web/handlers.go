@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
+
+	"snippetbox.vishalborana2407.net/internal/models"
 )
 
 // home handles requests to the root URL ("/").
@@ -14,40 +16,19 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Add a custom response header for demonstration.
 	w.Header().Add("Server", "Go")
 
-	// ✅ List of template files to parse.
-	// 💡 The base layout (base.tmpl) should always come first,
-	// because it defines the common HTML structure (like <html>, <head>, etc.)
-	// that other page templates (e.g. home.tmpl) will embed into.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/pages/home.tmpl",
-		"./ui/html/partials/nav.tmpl",
-	}
+	// Get latest snippet - top 10
+	snippets, err := app.snippets.Latest()
 
-	// ✅ Parse all template files into a single *template.Template object.
-	// 💡 The "..." (ellipsis) expands the slice so that each file path
-	// is passed as an individual argument to template.ParseFiles().
-	templateSet, err := template.ParseFiles(files...)
-
-	// 💡 Log all defined templates (useful for debugging).
-	//log.Print("templateSet: ", templateSet.DefinedTemplates())
-
-	// ⚠️ Always check the error immediately after parsing.
-	// If there’s a syntax or path error, return a 500 response and stop further execution.
+	// If there’s an error in getting the records, return server error - 500
 	if err != nil {
-		// Use the serverError() helper to log the error and send a 500 response.
 		app.serverError(w, r, err)
 	}
 
-	// ✅ Execute the base template and write the output to the ResponseWriter.
-	// 💡 The "base" template usually includes placeholders ({{template "title"}} / {{template "main"}})
-	// that will automatically call the nested templates like home.tmpl.
-	// The second argument allows passing dynamic data to the template (nil here means no data).
-	// why pass "base": Render and execute the template named base, and write the final HTML to w (the HTTP response).
-	err = templateSet.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		// Use the serverError() helper to log the error and send a 500 response.
-		app.serverError(w, r, err)
+	// Iterate over the snippets and write the snippet data as a plain-text HTTP response body.
+	// _ = index
+	for _, snippet := range snippets {
+		// Format and write snippet struct to response (%+v includes field names)
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
 }
 
@@ -63,8 +44,18 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ Write a response that displays the snippet ID.
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	// Write the snippet data as a plain-text HTTP response body.
+	fmt.Fprintf(w, "%+v", snippet)
 }
 
 // snippetCreate displays a form for creating a new snippet.
