@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -20,35 +19,17 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Get latest snippet - top 10
 	snippets, err := app.snippets.Latest()
 
+	// log length of snippets
+	app.logger.Info("Number of snippets", "length", len(snippets))
+
 	// If there’s an error in getting the records, return server error - 500
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/home.tmpl",
-	}
-
-	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	// Create an instance of a templateData struct holding the slice of
-	// snippets.
-	data := templateData{
-		Snippets: snippets,
-	}
-
-	// Pass in the templateData struct when executing the template.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
+	// use the render helper to render the home.tmpl template
+	app.render(w, r, http.StatusOK, "home.tmpl", templateData{Snippets: snippets})
 }
 
 // snippetView handles requests for viewing a specific snippet.
@@ -73,33 +54,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing the paths to the view.tmpl file,
-	// plus the base layout and navigation partial that we made earlier.
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-	}
-
-	// Parse and Create a new template from the files.
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	// Create a new template data struct to pass to the template.
-	data := templateData{Snippet: snippet}
-
-	// Execute the template with the snippet data.
-	err = ts.ExecuteTemplate(w, "base", data)
-
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
-	// Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%+v", snippet)
+	// Use the render helper.
+	app.render(w, r, http.StatusOK, "view.tmpl", templateData{
+		Snippet: snippet,
+	})
 }
 
 // snippetCreate displays a form for creating a new snippet.

@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -15,8 +16,9 @@ import (
 
 // Define an application struct to hold the application-wide dependencies
 type application struct {
-	logger   *slog.Logger
-	snippets *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
+	logger        *slog.Logger
+	snippets      *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -53,12 +55,19 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
+	// Initialize a new template cache
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies
 	app := &application{
-		logger:   logger,
-		snippets: &models.SnippetModel{DB: db}, // contains the connection pool
-
+		logger:        logger,
+		snippets:      &models.SnippetModel{DB: db}, // contains the connection pool
+		templateCache: templateCache,
 	}
 
 	// Value returned by flag.String() is a pointer to the flag's value and not the value itself.
