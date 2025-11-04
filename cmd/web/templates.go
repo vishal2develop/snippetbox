@@ -7,5 +7,6 @@ import "snippetbox.vishalborana2407.net/internal/models"
 // At the moment it only contains one field, but we'll add more
 // to it as the project progresses.
 type templateData struct {
-	Snippet models.Snippet
+	Snippet  models.Snippet
+	Snippets []models.Snippet
 }

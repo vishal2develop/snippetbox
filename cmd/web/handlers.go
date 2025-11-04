@@ -25,12 +25,30 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, err)
 	}
 
-	// Iterate over the snippets and write the snippet data as a plain-text HTTP response body.
-	// _ = index
-	for _, snippet := range snippets {
-		// Format and write snippet struct to response (%+v includes field names)
-		fmt.Fprintf(w, "%+v\n", snippet)
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
 	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	// Create an instance of a templateData struct holding the slice of
+	// snippets.
+	data := templateData{
+		Snippets: snippets,
+	}
+
+	// Pass in the templateData struct when executing the template.
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+
 }
 
 // snippetView handles requests for viewing a specific snippet.
