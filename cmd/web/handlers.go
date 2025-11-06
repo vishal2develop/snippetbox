@@ -19,17 +19,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Get latest snippet - top 10
 	snippets, err := app.snippets.Latest()
 
-	// log length of snippets
-	app.logger.Info("Number of snippets", "length", len(snippets))
-
-	// If there’s an error in getting the records, return server error - 500
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
+	data := app.newTemplateData(r)
+
+	data.Snippets = snippets
+
+	// log length of snippets
+	app.logger.Info("Number of snippets", "length", len(snippets))
+
 	// use the render helper to render the home.tmpl template
-	app.render(w, r, http.StatusOK, "home.tmpl", templateData{Snippets: snippets})
+	app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 // snippetView handles requests for viewing a specific snippet.
@@ -54,10 +57,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := app.newTemplateData(r)
+
+	data.Snippet = snippet
+
 	// Use the render helper.
-	app.render(w, r, http.StatusOK, "view.tmpl", templateData{
-		Snippet: snippet,
-	})
+	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
 // snippetCreate displays a form for creating a new snippet.
