@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"snippetbox.vishalborana2407.net/internal/models"
 )
@@ -18,6 +19,16 @@ type templateData struct {
 	Snippet     models.Snippet
 	Snippets    []models.Snippet
 	CurrentYear int
+}
+
+// helper function to format a time.Time object as a human-readable date
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:04")
+}
+
+// initialize a template.Funcmap value and store it in a global variabe
+var functions = template.FuncMap{
+	"humanDate": humanDate,
 }
 
 // create a new template cache that will hold all the templates
@@ -39,9 +50,14 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// Extract the filename from the filepath.
 		name := filepath.Base(page)
 
+		// before we parse the template, register the functions
+		// template.New(name) - Creates a new, empty template with the given name
+		// .Funcs(functions) - Registers custom functions (like humanDate) that can be used in templates
+		ts := template.New(name).Funcs(functions)
+
 		// Parse the base template file into a template set.
 		// Start with the master layout template.
-		ts, err := template.ParseFiles("./ui/html/base.tmpl")
+		ts, err := ts.ParseFiles("./ui/html/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
