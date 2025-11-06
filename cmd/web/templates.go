@@ -11,9 +11,13 @@ import (
 // any dynamic data that we want to pass to our HTML templates.
 // At the moment it only contains one field, but we'll add more
 // to it as the project progresses.
+
+// lowercase starting  = private (not accessible outside of this package)
+// uppercase starting = public (accessible outside of this package)
 type templateData struct {
-	Snippet  models.Snippet
-	Snippets []models.Snippet
+	Snippet     models.Snippet
+	Snippets    []models.Snippet
+	CurrentYear int
 }
 
 // create a new template cache that will hold all the templates
