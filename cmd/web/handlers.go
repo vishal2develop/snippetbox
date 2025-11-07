@@ -13,9 +13,6 @@ import (
 // Change the signature of the home handler so it is defined as a method against
 // *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// Add a custom response header for demonstration.
-	w.Header().Add("Server", "Go")
-
 	// Get latest snippet - top 10
 	snippets, err := app.snippets.Latest()
 

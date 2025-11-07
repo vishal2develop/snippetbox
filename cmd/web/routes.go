@@ -3,7 +3,8 @@ package main
 import "net/http"
 
 // The routes() method returns a servemux containing our application routes.
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
+
 	mux := http.NewServeMux()
 
 	// Register static files
@@ -33,5 +34,6 @@ func (app *application) routes() *http.ServeMux {
 	// Register POST routes
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	return mux
+	// recover panic middleware->log all requests middleware -> commonHeaders middleware -> mux (to serve the request)
+	return app.recoverPanic(app.logRequest(commonHeaders(mux)))
 }
