@@ -19,6 +19,7 @@ type templateData struct {
 	Snippet     models.Snippet
 	Snippets    []models.Snippet
 	CurrentYear int
+	Form        any
 }
 
 // helper function to format a time.Time object as a human-readable date
