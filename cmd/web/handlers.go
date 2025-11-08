@@ -7,7 +7,20 @@ import (
 	"strconv"
 
 	"snippetbox.vishalborana2407.net/internal/models"
+	"snippetbox.vishalborana2407.net/internal/validator"
 )
+
+// Update our snippetCreateForm struct to include struct tags which tell the
+// decoder how to map HTML form values into the different struct fields. So, for
+// example, here we're telling the decoder to store the value from the HTML form
+// input with the name "title" in the Title field. The struct tag `form:"-"`
+// tells the decoder to completely ignore a field during decoding.
+type snippetCreateForm struct {
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
+}
 
 // home handles requests to the root URL ("/").
 // Change the signature of the home handler so it is defined as a method against
@@ -64,18 +77,58 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 // snippetCreate displays a form for creating a new snippet.
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display a form for creating a new snippet..."))
+	data := app.newTemplateData(r)
+	// Initialize a new snippetCreateForm instance and pass it to the template.
+	// Notice how this is also a great opportunity to set any default or
+	// 'initial' values for the form --- here we set the initial value for the
+	// snippet expiry to 365 days.
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+
+	// render the create.tmpl template
+	app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
 // snippetCreatePost handles form submissions and saves a new snippet.
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// dummy data for snippet creation
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	var form snippetCreateForm
 
-	// call the Insert() method on the snippet model
-	id, err := app.snippets.Insert(title, content, expires)
+	// parse the form values
+	// First we call r.ParseForm() which adds any data in POST request bodies
+	// to the r.PostForm map. This also works in the same way for PUT and PATCH
+	// requests. If there are any errors, we use our app.ClientError() helper to
+	// send a 400 Bad Request response to the user.
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Because the Validator struct is embedded by the snippetCreateForm struct,
+	// we can call CheckField() directly on it to execute our validation checks.
+	// CheckField() will add the provided key and error message to the
+	// FieldErrors map if the check does not evaluate to true. For example, in
+	// the first line here we "check that the form.Title field is not blank". In
+	// the second, we "check that the form.Title field has a maximum character
+	// length of 100" and so on.
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
+
+	// Use the Valid() method to see if any of the checks failed. If they did,
+	// then re-render the template passing in the form in the same way as
+	// before.
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
+		return
+	}
+
+	// If there are no validation errors, then save the snippet to the database.
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
