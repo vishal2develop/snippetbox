@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.vishalborana2407.net/internal/models"
 )
@@ -19,6 +20,7 @@ type application struct {
 	logger        *slog.Logger
 	snippets      *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -62,12 +64,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// initialize a new form decoder
+	formDecoder := form.NewDecoder()
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies
 	app := &application{
 		logger:        logger,
 		snippets:      &models.SnippetModel{DB: db}, // contains the connection pool
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	// Value returned by flag.String() is a pointer to the flag's value and not the value itself.
