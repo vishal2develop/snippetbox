@@ -7,7 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.vishalborana2407.net/internal/models"
@@ -17,10 +20,11 @@ import (
 
 // Define an application struct to hold the application-wide dependencies
 type application struct {
-	logger        *slog.Logger
-	snippets      *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	logger         *slog.Logger
+	snippets       *models.SnippetModel // will allow us to use the SnippetModel type in our handlers.
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -30,7 +34,7 @@ func main() {
 
 	// Define a new command-line flag for the MySQL DSN string.
 	// web = username, admin = password, snippetbox = database name, parseTime = true = parse time
-	dsn := flag.String("dsn", "web:admin@/snippetbox?parseTime=true", "MySQL DSN string")
+	dsn := flag.String("dsn", "web:web@tcp(127.0.0.1:3306)/snippetbox?parseTime=true", "MySQL DSN string")
 
 	// parse the flags and assign it to addr.
 	// Parse() must be called after all flags are defined and before flags are accessed.
@@ -67,13 +71,20 @@ func main() {
 	// initialize a new form decoder
 	formDecoder := form.NewDecoder()
 
+	// initialize a new session manager, then configure it to use our MySQL database as our session store.
+	// set lifetime to 12 hours, so that the session cookie expires automatically after 12 hours.
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies
 	app := &application{
-		logger:        logger,
-		snippets:      &models.SnippetModel{DB: db}, // contains the connection pool
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		logger:         logger,
+		snippets:       &models.SnippetModel{DB: db}, // contains the connection pool
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// Value returned by flag.String() is a pointer to the flag's value and not the value itself.
