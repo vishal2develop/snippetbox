@@ -75,8 +75,13 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 
 // newTemplateData creates a new templateData struct intialized with the current year.
 func (app *application) newTemplateData(r *http.Request) templateData {
+	// Retrieve flash message from session store using PopString()
+	// PopString  - retrieves & deleted from session store for a key.
+	// if no value exists for key -> returns empty string
 	return templateData{
 		CurrentYear: time.Now().Year(),
+		// Add the flash message to the template data, if one exists.
+		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 
